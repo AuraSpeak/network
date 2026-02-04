@@ -1,13 +1,7 @@
 version: "2"
 
-go: "1.25"
-
 run:
   timeout: 5m
-  skip-files:
-    - types_gen\.go
-  skip-dirs:
-    - vendor
 
 linters:
   enable:
@@ -20,6 +14,3 @@ linters:
 issues:
   max-issues-per-linter: 50
   max-same-issues: 3
-
-output:
-  format: colored-line-number

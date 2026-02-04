@@ -1,0 +1,27 @@
+
+version: 2
+updates:
+  # 1) Go Modules (go.mod / go.sum)
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    # Optional: PRs sauber benennen
+    commit-message:
+      prefix: "deps(go)"
+
+  # 2) GitHub Actions (updates für uses: ...@vX in deinen Workflows)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps(ci)"

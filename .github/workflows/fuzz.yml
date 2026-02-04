@@ -1,0 +1,26 @@
+name: fuzz
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: "0 6 * * 1" # mondays
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Fuzz HandlePacket
+        run: go test -fuzz='^FuzzHandlePacket$' -fuzztime=60s -fuzzminimizetime=0 ./router/...
+      - name: Fuzz HandlePacketNoHandler
+        run: go test -fuzz='^FuzzHandlePacketNoHandler$' -fuzztime=60s -fuzzminimizetime=0 ./router/...
+      - name: Fuzz RunReadLoop
+        run: go test -fuzz='^FuzzRunReadLoop$' -fuzztime=60s -fuzzminimizetime=0 ./readloop/...

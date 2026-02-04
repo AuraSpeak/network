@@ -6,19 +6,25 @@ on:
   push:
     branches: [ "main" ]
 
+# Top-level: read-only
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   analysis:
     runs-on: ubuntu-latest
+
+    # Job-level: nur fürs Hochladen der SARIF Results nötig
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: ossf/scorecard-action@v2
+      - uses: actions/checkout@v6
+      - uses: ossf/scorecard-action@v2.4.3
         with:
           results_file: results.sarif
           results_format: sarif
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: results.sarif
