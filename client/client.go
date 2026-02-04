@@ -93,7 +93,11 @@ func (c *Client) Run(ctx context.Context) error {
 			return err
 		}
 	}
-	defer c.conn.Close()
+	defer func() {
+		if err := c.conn.Close(); err != nil {
+			log.WithField("caller", "network/client").WithError(err).Warn("close connection")
+		}
+	}()
 
 	c.running.Store(true)
 	defer c.running.Store(false)
@@ -127,7 +131,9 @@ func (c *Client) Stop() {
 	c.cancel()
 	c.mu.Unlock()
 	if c.conn != nil {
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			log.WithField("caller", "network/client").WithError(err).Warn("close connection")
+		}
 	}
 	c.wg.Wait()
 	log.WithField("caller", "network/client").Info("Client stopped")

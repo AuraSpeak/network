@@ -75,7 +75,11 @@ func (s *Server) Run(ctx context.Context) error {
 		return err
 	}
 	s.ln = ln
-	defer s.ln.Close()
+	defer func() {
+		if err := s.ln.Close(); err != nil {
+			log.WithField("caller", "network/server").WithError(err).Warn("close listener")
+		}
+	}()
 
 	log.WithField("caller", "network/server").Infof("Server started on port %d", s.cfg.Port)
 
@@ -101,11 +105,15 @@ func (s *Server) Run(ctx context.Context) error {
 		cancel()
 		if !ok {
 			log.WithField("caller", "network/server").Error("Connection is not DTLS")
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				log.WithField("caller", "network/server").WithError(err).Warn("close connection after handshake failure")
+			}
 			continue
 		}
 		if err != nil {
-			conn.Close()
+			if err := conn.Close(); err != nil {
+				log.WithField("caller", "network/server").WithError(err).Warn("close connection after handshake failure")
+			}
 			continue
 		}
 		peer := conn.RemoteAddr().String()
@@ -127,7 +135,9 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) Stop() {
 	atomic.StoreInt32(&s.shouldStop, 1)
 	if s.ln != nil {
-		s.ln.Close()
+		if err := s.ln.Close(); err != nil {
+			log.WithField("caller", "network/server").WithError(err).Warn("close listener")
+		}
 		s.ln = nil
 	}
 	// Send disconnect packet then close all conns
@@ -142,7 +152,9 @@ func (s *Server) Stop() {
 		if s.cfg.TraceFunc != nil {
 			s.cfg.TraceFunc(conn.LocalAddr().String(), conn.RemoteAddr().String(), "out", pkg.Payload)
 		}
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			log.WithField("caller", "network/server").WithField("peer", key).WithError(err).Warn("close connection")
+		}
 		s.conns.Delete(key)
 		return true
 	})
@@ -171,7 +183,9 @@ func (s *Server) Broadcast(packet *protocol.Packet) {
 func (s *Server) connUnregister(conn net.Conn) {
 	peer := conn.RemoteAddr().String()
 	s.conns.Delete(peer)
-	conn.Close()
+	if err := conn.Close(); err != nil {
+		log.WithField("caller", "network/server").WithField("peer", peer).WithError(err).Warn("close connection")
+	}
 }
 
 // HandlePacketForTest invokes the router for the given packet and peer (for tests).
